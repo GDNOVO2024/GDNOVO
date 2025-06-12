@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: pix-backend-bynet
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_VERSION
+        value: 18
