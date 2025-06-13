@@ -1,11 +1,21 @@
-import fetch from 'node-fetch';
+// arquivo: server.js (ou index.js, backend hospedado no Render)
 
-export async function gerarPagamentoPIX(nome, email = 'contato@contato.com.br') {
+import express from 'express';
+import fetch from 'node-fetch';
+import cors from 'cors';
+
+const app = express();
+app.use(express.json());
+app.use(cors());
+
+app.post('/criar-pagamento', async (req, res) => {
+  const { nome, email } = req.body;
+
   const criar = await fetch('https://api.bynetglobal.com.br/v1/transactions', {
     method: 'POST',
     headers: {
-      'accept': 'application/json',
-      'authorization': 'Basic c2tfbGl2ZV92MnlncVVRa0lVVGU1YkExTk41UWlqVUZ5THVlQjZxQzliQ0x0NjNjTDA6eA==',
+      accept: 'application/json',
+      authorization: 'Basic c2tfbGl2ZV92MnlncVVRa0lVVGU1YkExTk41UWlqVUZ5THVlQjZxQzliQ0x0NjNjTDA6eA==',
       'content-type': 'application/json'
     },
     body: JSON.stringify({
@@ -24,21 +34,26 @@ export async function gerarPagamentoPIX(nome, email = 'contato@contato.com.br') 
   });
 
   const data = await criar.json();
-  console.log('ID da transação:', data.id);
+  let status = 'waiting';
+  const maxTentativas = 6;
 
-  // espera 5 segundos antes de verificar
-  await new Promise(resolve => setTimeout(resolve, 5000));
+  for (let i = 0; i < maxTentativas; i++) {
+    await new Promise(resolve => setTimeout(resolve, 5000));
 
-  const verificar = await fetch(`https://api.bynetglobal.com.br/v1/transactions/${data.id}`, {
-    method: 'GET',
-    headers: {
-      'accept': 'application/json',
-      'authorization': 'Basic c2tfbGl2ZV92MnlncVVRa0lVVGU1YkExTk41UWlqVUZ5THVlQjZxQzliQ0x0NjNjTDA6eA=='
-    }
-  });
+    const verificar = await fetch(`https://api.bynetglobal.com.br/v1/transactions/${data.id}`, {
+      method: 'GET',
+      headers: {
+        accept: 'application/json',
+        authorization: 'Basic c2tfbGl2ZV92MnlncVVRa0lVVGU1YkExTk41UWlqVUZ5THVlQjZxQzliQ0x0NjNjTDA6eA=='
+      }
+    });
 
-  const status = await verificar.json();
-  console.log('STATUS DO PAGAMENTO:', status.status); // "paid", "waiting" etc.
+    const resultado = await verificar.json();
+    status = resultado.status;
+    if (status === 'paid') break;
+  }
 
-  return { ...data, status: status.status };
-}
+  res.json({ status });
+});
+
+app.listen(3000, () => console.log('Servidor rodando na porta 3000'));
