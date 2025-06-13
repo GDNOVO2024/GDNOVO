@@ -16,7 +16,7 @@ export async function gerarPagamentoPIX(nome, email = 'contato@contato.com.br') 
         {
           tangible: true,
           title: 'curso marketing',
-          unitPrice: 100,
+          unitPrice: 10,
           quantity: 1
         }
       ]
