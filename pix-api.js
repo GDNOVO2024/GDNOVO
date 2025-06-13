@@ -1,7 +1,7 @@
 import fetch from 'node-fetch';
 
 export async function gerarPagamentoPIX(nome, email = 'contato@contato.com.br') {
-  const resposta = await fetch('https://api.bynetglobal.com.br/v1/transactions', {
+  const criar = await fetch('https://api.bynetglobal.com.br/v1/transactions', {
     method: 'POST',
     headers: {
       'accept': 'application/json',
@@ -10,19 +10,35 @@ export async function gerarPagamentoPIX(nome, email = 'contato@contato.com.br') 
     },
     body: JSON.stringify({
       customer: { name: nome, email },
-      amount: 100,
+      amount: 18930,
       paymentMethod: 'pix',
       items: [
         {
           tangible: true,
           title: 'curso marketing',
-          unitPrice: 18930,
+          unitPrice: 100,
           quantity: 1
         }
       ]
     })
   });
 
-  const data = await resposta.json();
-  return data;
+  const data = await criar.json();
+  console.log('ID da transação:', data.id);
+
+  // espera 5 segundos antes de verificar
+  await new Promise(resolve => setTimeout(resolve, 5000));
+
+  const verificar = await fetch(`https://api.bynetglobal.com.br/v1/transactions/${data.id}`, {
+    method: 'GET',
+    headers: {
+      'accept': 'application/json',
+      'authorization': 'Basic c2tfbGl2ZV92MnlncVVRa0lVVGU1YkExTk41UWlqVUZ5THVlQjZxQzliQ0x0NjNjTDA6eA=='
+    }
+  });
+
+  const status = await verificar.json();
+  console.log('STATUS DO PAGAMENTO:', status.status); // "paid", "waiting" etc.
+
+  return { ...data, status: status.status };
 }
