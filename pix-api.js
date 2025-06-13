@@ -5,16 +5,15 @@ import fetch from 'node-fetch';
 import cors from 'cors';
 
 const app = express();
-const PORT = process.env.PORT || 3000; // Render precisa dessa linha para porta dinâmica
+const PORT = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json());
 
-app.post('/criar-pagamento', async (req, res) => {
+app.post('/api/pix', async (req, res) => {
   const { nome, email } = req.body;
 
   try {
-    // 1. Cria o pagamento
     const criar = await fetch('https://api.bynetglobal.com.br/v1/transactions', {
       method: 'POST',
       headers: {
@@ -38,32 +37,18 @@ app.post('/criar-pagamento', async (req, res) => {
     });
 
     const data = await criar.json();
-    const transactionId = data.id;
-    let status = 'waiting';
 
-    // 2. Verifica status 6 vezes (30s)
-    for (let i = 0; i < 6; i++) {
-      await new Promise(resolve => setTimeout(resolve, 5000));
-
-      const verificar = await fetch(`https://api.bynetglobal.com.br/v1/transactions/${transactionId}`, {
-        method: 'GET',
-        headers: {
-          accept: 'application/json',
-          authorization: 'Basic c2tfbGl2ZV92MnlncVVRa0lVVGU1YkExTk41UWlqVUZ5THVlQjZxQzliQ0x0NjNjTDA6eA=='
-        }
-      });
-
-      const resultado = await verificar.json();
-      status = resultado.status;
-      if (status === 'paid') break;
-    }
-
-    // 3. Retorna status
-    res.json({ status });
+    // ❗ Aqui está o que o frontend precisa:
+    res.json({
+      id: data.id,
+      pix: {
+        qrcode: data.qrCodeText || data.pix.qrcode || '' // usa o campo correto se disponível
+      }
+    });
 
   } catch (e) {
     console.error('Erro no servidor:', e);
-    res.status(500).json({ error: 'Erro ao processar pagamento.' });
+    res.status(500).json({ error: 'Erro ao gerar pagamento.' });
   }
 });
 
