@@ -10,7 +10,7 @@ export async function gerarPagamentoPIX(nome, email = 'contato@contato.com.br') 
     },
     body: JSON.stringify({
       customer: { name: nome, email },
-      amount: 18930,
+      amount: 100,
       paymentMethod: 'pix',
       items: [
         {
